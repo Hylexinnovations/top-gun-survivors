@@ -411,207 +411,213 @@ function drawBackground() {
 function drawPlayer(p) {
   if (p.iframes > 0 && Math.floor(p.iframes * 12) % 2 === 0) return;
 
-  const px  = Math.round(p.cx);
-  const py  = Math.round(p.cy);
-  const bob = Math.round(Math.sin(p.bobTimer * 4.5) * 1.0);
-  // Chibi walk: whole body sways slightly left/right
+  const px   = Math.round(p.cx);
+  const py   = Math.round(p.cy);
+  const bob  = Math.round(Math.sin(p.bobTimer * 4.5) * 1.0);
   const sway = p.animState === 'walk' ? Math.round(Math.sin(p.bobTimer * 8) * 1) : 0;
 
   ctx.save();
   ctx.translate(px + sway, py + bob);
 
-  // ═══════════════════════════════════════════════════════════════
-  // CHIBI RAPI RED HOOD — huge hair dominates the silhouette
-  // ═══════════════════════════════════════════════════════════════
+  // hs() draws horizontal strips to build a rounded blob shape.
+  // strips = array of [yOffset, width] pairs (each strip is 2px tall).
+  const hs = (strips, color) => {
+    ctx.fillStyle = color;
+    for (const [dy, w] of strips) ctx.fillRect(-(w >> 1), dy, w, 2);
+  };
 
-  // ── LAYER 1: HAIR OUTER SHADOW (darkest, forms outer silhouette) ──
-  ctx.fillStyle = '#1e0606';
-  ctx.fillRect(-15, -20, 5,  40);   // left outer wall
-  ctx.fillRect(10,  -20, 5,  40);   // right outer wall
-  ctx.fillRect(-13,  16, 26,  6);   // bottom flow
-  ctx.fillRect(-10, -22, 3,   4);   // left top dark tuft
-  ctx.fillRect(7,   -22, 3,   4);   // right top dark tuft
+  // ── HAIR: 6 nested rounded layers, dark-outside → bright-centre ──
+  //
+  //  Each inner layer is progressively narrower → creates rounded look.
+  //  Reference: sticker art has very large, wide, circular hair mass
+  //  with warm orange highlights on top and deep shadow underneath.
 
-  // ── LAYER 2: HAIR BASE (dark red-brown, inner shadow) ────────────
-  ctx.fillStyle = '#7a1808';
-  ctx.fillRect(-13, -20, 26, 38);
-  ctx.fillRect(-15, -14, 4,  28);
-  ctx.fillRect(11,  -14, 4,  28);
+  hs([ // LAYER 1 — outer shadow, forms the silhouette
+    [-22, 10], [-20, 18], [-18, 26], [-16, 32], [-14, 34],
+    [-12, 34], [-10, 32], [-8, 28],  [-6, 24],  [-4, 20],
+    [-2, 16],  [0, 12],   [2, 8],    [4, 6],    [6, 4]
+  ], '#1e0506');
 
-  // ── LAYER 3: MAIN HAIR (vibrant red-orange) ──────────────────────
-  ctx.fillStyle = '#cc2e10';
-  ctx.fillRect(-12, -20, 24, 36);
-  ctx.fillRect(-14, -12, 4,  26);
-  ctx.fillRect(10,  -12, 4,  26);
+  hs([ // LAYER 2 — dark red-brown base
+    [-20, 14], [-18, 22], [-16, 28], [-14, 30],
+    [-12, 30], [-10, 28], [-8, 24],  [-6, 20],
+    [-4, 16],  [-2, 12],  [0, 8],    [2, 4]
+  ], '#7a1208');
 
-  // ── LAYER 4: HAIR MID-HIGHLIGHT (brighter, front-facing) ─────────
-  ctx.fillStyle = '#e84020';
-  ctx.fillRect(-10, -20, 20, 28);
-  ctx.fillRect(-12,  -8, 4,  18);
-  ctx.fillRect(8,    -8, 4,  18);
+  hs([ // LAYER 3 — main red-orange
+    [-20, 10], [-18, 18], [-16, 24], [-14, 26],
+    [-12, 26], [-10, 24], [-8, 20],  [-6, 16],
+    [-4, 12],  [-2, 8],   [0, 4]
+  ], '#c42c10');
 
-  // ── LAYER 5: HAIR TOP HIGHLIGHT (warm orange, lit from above) ─────
-  ctx.fillStyle = '#f05828';
-  ctx.fillRect(-8,  -20, 8,  14);
-  ctx.fillRect(0,   -20, 8,  14);
+  hs([ // LAYER 4 — brighter, front-facing
+    [-18, 14], [-16, 20], [-14, 22],
+    [-12, 22], [-10, 20], [-8, 16],
+    [-6, 12],  [-4, 8]
+  ], '#e84020');
 
-  ctx.fillStyle = '#f87840';
-  ctx.fillRect(-6,  -20, 5,   7);
-  ctx.fillRect(1,   -20, 5,   7);
+  hs([ // LAYER 5 — warm orange highlight (lit from above)
+    [-20, 6],  [-18, 10], [-16, 14], [-14, 16],
+    [-12, 14], [-10, 10], [-8, 6]
+  ], '#f05828');
 
-  ctx.fillStyle = '#ffa050';         // warm orange tip highlights
-  ctx.fillRect(-5,  -21, 3,   3);
-  ctx.fillRect(2,   -21, 3,   3);
+  hs([ // LAYER 6 — brightest warm tips
+    [-22, 4], [-20, 8], [-18, 8], [-16, 8], [-14, 6]
+  ], '#f87840');
 
-  // ── BODY (tiny chibi torso, mostly hidden by hair) ────────────────
-  ctx.fillStyle = '#161616';
-  ctx.fillRect(-9,  -2, 18,  18);
+  hs([ // LAYER 7 — hottest highlight specks at very top
+    [-22, 2], [-20, 4], [-18, 4]
+  ], '#faa050');
 
-  // ── WHITE COLLAR & RED NECKERCHIEF ───────────────────────────────
-  ctx.fillStyle = '#dcdcdc';
-  ctx.fillRect(-6,  -3, 12,   4);
+  // ── DARK BERET TUFTS (peeking above hair at top) ─────────────────
+  ctx.fillStyle = '#1a1a1a';
+  ctx.fillRect(-7, -22, 3, 5);
+  ctx.fillRect(4,  -22, 3, 5);
+  // tiny red star detail on left tuft
   ctx.fillStyle = '#cc1818';
-  ctx.fillRect(-2,  -3,  5,   5);
+  ctx.fillRect(-6, -21, 1, 1);
+  ctx.fillRect(-7, -20, 3, 1);
+  ctx.fillRect(-6, -19, 1, 1);
+
+  // ── BODY (tiny, mostly hidden under hair blob) ────────────────────
+  ctx.fillStyle = '#141414';
+  ctx.fillRect(-7, -2, 14, 14);
+
+  // ── WHITE COLLAR ─────────────────────────────────────────────────
+  ctx.fillStyle = '#dcdcdc';
+  ctx.fillRect(-5, -3, 10, 4);
+  ctx.fillStyle = '#cc1818';   // red neckerchief
+  ctx.fillRect(-2, -3,  4, 6);
   ctx.fillStyle = '#aa1010';
-  ctx.fillRect(-1,   1,  3,   2);
+  ctx.fillRect(-1,  2,  2, 2);
 
-  // ── SMALL CHIBI ARMS ─────────────────────────────────────────────
-  ctx.fillStyle = '#161616';
-  ctx.fillRect(-13,  2,  5,   9);
-  ctx.fillRect(8,    2,  5,   9);
+  // ── CHIBI ARMS ───────────────────────────────────────────────────
+  ctx.fillStyle = '#141414';
+  ctx.fillRect(-12, 2, 5, 8);
+  ctx.fillRect(7,   2, 5, 8);
+  ctx.fillStyle = '#fce4c8';   // pale hands
+  ctx.fillRect(-11, 8, 4, 4);
+  ctx.fillRect(7,   8, 4, 4);
+
+  // ── DARK SKIRT HINT ──────────────────────────────────────────────
+  ctx.fillStyle = '#1a1a28';
+  ctx.fillRect(-7, 11, 14, 6);
+
+  // ── FACE (small, cute, nested in hair) ───────────────────────────
   ctx.fillStyle = '#fce4c8';
-  ctx.fillRect(-12,  9,  4,   4);
-  ctx.fillRect(8,    9,  4,   4);
+  ctx.fillRect(-6, -13, 12, 12);
+  ctx.fillStyle = '#f0c0a0';   // soft cheek blush
+  ctx.fillRect(-6,  -6,  3,  2);
+  ctx.fillRect(3,   -6,  3,  2);
 
-  // ── SKIRT (tiny hint below body) ─────────────────────────────────
-  ctx.fillStyle = '#1c1c2c';
-  ctx.fillRect(-9,  14, 18,   8);
-  ctx.fillStyle = '#252538';
-  ctx.fillRect(-6,  14,  1,   7);
-  ctx.fillRect(-1,  14,  1,   7);
-  ctx.fillRect(4,   14,  1,   7);
-
-  // ── FACE (small, centered — chibi proportions) ───────────────────
-  ctx.fillStyle = '#fce4c8';
-  ctx.fillRect(-7,  -14, 14,  13);
-  ctx.fillStyle = '#f0c8a8';
-  ctx.fillRect(-7,   -6,  3,   3);
-  ctx.fillRect(4,    -6,  3,   3);
-
-  // ── HAIR FRINGE (hangs in front over face edges) ──────────────────
+  // ── HAIR FRINGE (hangs in front of face sides) ───────────────────
   ctx.fillStyle = '#e84020';
-  ctx.fillRect(-9,  -14,  3,  13);
-  ctx.fillRect(6,   -14,  3,  13);
-  ctx.fillStyle = '#cc2e10';
-  ctx.fillRect(-10, -14,  2,  10);
-  ctx.fillRect(8,   -14,  2,  10);
-  ctx.fillStyle = '#1e0606';
-  ctx.fillRect(-10, -14,  1,   7);
-  ctx.fillRect(9,   -14,  1,   7);
+  ctx.fillRect(-8, -13, 2, 10);  // left strand
+  ctx.fillRect(6,  -13, 2, 10);  // right strand
+  ctx.fillStyle = '#c42c10';
+  ctx.fillRect(-9, -13, 2,  8);  // left shadow strand
+  ctx.fillRect(7,  -13, 2,  8);  // right shadow strand
+  ctx.fillStyle = '#1e0506';
+  ctx.fillRect(-9, -13, 1,  5);  // left dark root
+  ctx.fillRect(8,  -13, 1,  5);  // right dark root
 
-  // ── EYES (large chibi, amber-golden — matches pixel art reference) ─
-  ctx.fillStyle = '#111111';
-  ctx.fillRect(-6,  -10,  5,   1);  // left lash
-  ctx.fillRect(1,   -10,  5,   1);  // right lash
-  ctx.fillStyle = '#b87810';         // amber iris outer
-  ctx.fillRect(-5,   -9,  4,   3);
-  ctx.fillRect(1,    -9,  4,   3);
-  ctx.fillStyle = '#e0a020';         // bright inner iris
-  ctx.fillRect(-4,   -9,  2,   2);
-  ctx.fillRect(2,    -9,  2,   2);
-  ctx.fillStyle = '#1a0a00';         // pupil
-  ctx.fillRect(-4,   -9,  1,   2);
-  ctx.fillRect(2,    -9,  1,   2);
-  ctx.fillStyle = '#ffffff';         // catch-light
-  ctx.fillRect(-5,   -9,  1,   1);
-  ctx.fillRect(1,    -9,  1,   1);
-  ctx.fillStyle = '#c09050';         // lower lid
-  ctx.fillRect(-5,   -6,  4,   1);
-  ctx.fillRect(1,    -6,  4,   1);
+  // ── EYES (large chibi — amber-golden, matching pixel art ref) ────
+  ctx.fillStyle = '#0d0900';     // heavy top lash
+  ctx.fillRect(-5, -10, 4, 1);
+  ctx.fillRect(1,  -10, 4, 1);
+  ctx.fillStyle = '#b87810';     // amber-gold iris outer
+  ctx.fillRect(-5,  -9, 4, 3);
+  ctx.fillRect(1,   -9, 4, 3);
+  ctx.fillStyle = '#e09820';     // bright inner iris
+  ctx.fillRect(-4,  -9, 2, 2);
+  ctx.fillRect(2,   -9, 2, 2);
+  ctx.fillStyle = '#0d0900';     // pupil
+  ctx.fillRect(-4,  -9, 1, 2);
+  ctx.fillRect(2,   -9, 1, 2);
+  ctx.fillStyle = '#ffffff';     // catch-light
+  ctx.fillRect(-5,  -9, 1, 1);
+  ctx.fillRect(1,   -9, 1, 1);
+  ctx.fillStyle = '#c09050';     // lower lid / lash line
+  ctx.fillRect(-5,  -6, 4, 1);
+  ctx.fillRect(1,   -6, 4, 1);
 
-  // ── TINY NOSE ────────────────────────────────────────────────────
-  ctx.fillStyle = '#e8a880';
-  ctx.fillRect(-1,   -5,  2,   1);
+  // ── NOSE (single pixel row, chibi) ──────────────────────────────
+  ctx.fillStyle = '#e8a080';
+  ctx.fillRect(-1, -5, 2, 1);
 
-  // ── STOIC MOUTH (flat expressionless line) ────────────────────────
-  ctx.fillStyle = '#b88870';
-  ctx.fillRect(-2,   -3,  5,   1);
+  // ── STOIC MOUTH (flat straight line) ────────────────────────────
+  ctx.fillStyle = '#b08068';
+  ctx.fillRect(-2, -3, 5, 1);
 
-  // ── DARK HAIR TUFTS / BERET PEEK (top, above main hair) ──────────
-  ctx.fillStyle = '#1c1c1c';
-  ctx.fillRect(-10, -22,  3,   4);
-  ctx.fillRect(7,   -22,  3,   4);
-
-  // ── CHAIN MACHINE GUN (free rotation toward mouse cursor) ─────────
+  // ── CHAIN MACHINE GUN (rotates toward mouse, chibi scale) ────────
   ctx.save();
-  ctx.translate(8, 4);
+  ctx.translate(7, 3);
   ctx.rotate(p.aimAngle);
 
   // Stock
   ctx.fillStyle = '#1c1c1c';
-  ctx.fillRect(-7, -3,  7,  6);
-  ctx.fillStyle = '#2e2e2e';
-  ctx.fillRect(-6, -2,  2,  4);
+  ctx.fillRect(-6, -3,  6, 6);
+  ctx.fillStyle = '#2a2a2a';
+  ctx.fillRect(-5, -2,  2, 4);
 
-  // Receiver body
+  // Receiver
   ctx.fillStyle = '#181818';
-  ctx.fillRect(0,  -4, 16,  8);
-  ctx.fillStyle = '#8b1010';
-  ctx.fillRect(2,  -3, 12,  2);
-  ctx.fillRect(2,   1, 12,  2);
-  ctx.fillStyle = '#2e2e2e';
-  ctx.fillRect(0,  -5, 12,  1);
+  ctx.fillRect(0,  -4, 16, 8);
+  ctx.fillStyle = '#8b1010';     // dark red accent
+  ctx.fillRect(2,  -3, 12, 2);
+  ctx.fillRect(2,   1, 12, 2);
+  ctx.fillStyle = '#2e2e2e';     // top rail
+  ctx.fillRect(0,  -5, 12, 1);
 
   // Barrel
   ctx.fillStyle = '#222222';
-  ctx.fillRect(14, -2, 20,  4);
+  ctx.fillRect(14, -2, 20, 4);
   ctx.fillStyle = '#3a3a3a';
-  ctx.fillRect(14, -2,  1,  4);
+  ctx.fillRect(14, -2,  1, 4);
 
   // Muzzle brake
   ctx.fillStyle = '#181818';
-  ctx.fillRect(32, -3,  5,  6);
+  ctx.fillRect(32, -3,  5, 6);
   ctx.fillStyle = '#484848';
-  ctx.fillRect(33, -2,  1,  2);
-  ctx.fillRect(35, -2,  1,  2);
-  ctx.fillRect(33,  0,  1,  2);
-  ctx.fillRect(35,  0,  1,  2);
+  ctx.fillRect(33, -2,  1, 2);
+  ctx.fillRect(35, -2,  1, 2);
+  ctx.fillRect(33,  0,  1, 2);
+  ctx.fillRect(35,  0,  1, 2);
 
   // Grip
   ctx.fillStyle = '#1c1c1c';
-  ctx.fillRect(4,   4,  4,  6);
+  ctx.fillRect(4,  4,  4, 6);
   ctx.fillStyle = '#2e2e2e';
-  ctx.fillRect(5,   5,  2,  5);
+  ctx.fillRect(5,  5,  2, 5);
 
-  // Chain feed links
+  // Chain feed
   ctx.fillStyle = '#909090';
-  ctx.fillRect(6,   8,  2,  2);
-  ctx.fillRect(9,  10,  2,  2);
-  ctx.fillRect(12,  8,  2,  2);
-  ctx.fillRect(15, 10,  2,  2);
-  ctx.fillRect(18,  8,  2,  2);
+  ctx.fillRect(6,  8, 2, 2);
+  ctx.fillRect(9, 10, 2, 2);
+  ctx.fillRect(12, 8, 2, 2);
+  ctx.fillRect(15,10, 2, 2);
+  ctx.fillRect(18, 8, 2, 2);
   ctx.fillStyle = '#606060';
-  ctx.fillRect(7,  10,  2,  2);
-  ctx.fillRect(10, 12,  2,  2);
-  ctx.fillRect(13, 10,  2,  2);
-  ctx.fillRect(16, 12,  2,  2);
+  ctx.fillRect(7, 10, 2, 2);
+  ctx.fillRect(10,12, 2, 2);
+  ctx.fillRect(13,10, 2, 2);
 
   // Ammo box
   ctx.fillStyle = '#181818';
-  ctx.fillRect(5,  13, 12,  7);
+  ctx.fillRect(5, 13, 12, 7);
   ctx.fillStyle = '#8b1010';
-  ctx.fillRect(5,  13,  2,  7);
+  ctx.fillRect(5, 13,  2, 7);
   ctx.fillStyle = '#2e2e2e';
-  ctx.fillRect(6,  14, 10,  2);
+  ctx.fillRect(6, 14, 10, 2);
 
   // Muzzle flash
   if (p.flashTimer > 0) {
     ctx.fillStyle = '#ffee00';
-    ctx.fillRect(35, -4,  8,  8);
+    ctx.fillRect(35, -4, 8, 8);
     ctx.fillStyle = '#ffffff';
-    ctx.fillRect(37, -2,  4,  4);
+    ctx.fillRect(37, -2, 4, 4);
     ctx.fillStyle = '#ffaa00';
-    ctx.fillRect(39, -6,  4, 12);
+    ctx.fillRect(39, -6, 4, 12);
   }
 
   ctx.restore();  // gun
